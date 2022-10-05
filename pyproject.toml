@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyneato"
+version = "0.0.1"
+authors = [
+  { name="Benjamin Paap", email="benjamin.paap@gmail.com" },
+]
+description = "Package to control a neato vacuum robot"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
