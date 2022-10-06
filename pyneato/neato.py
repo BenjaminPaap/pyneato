@@ -13,3 +13,4 @@ class Neato(Vendor):
     name = "neato"
     endpoint = "https://orbital.neatocloud.com/"
     auth_endpoint = "https://orbital.neatocloud.com/vendors/neato/sessions"
+    mime_version: str = "application/vnd.neato.orbital-http.v1+json"

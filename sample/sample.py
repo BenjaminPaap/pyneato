@@ -30,11 +30,25 @@ account = Account(session)
 robot = account.robots.pop()
 
 for index, floorplan in enumerate(account.floorplans):
-    print("%d. %s"%(
+    print("%d. Floorplan: %s"%(
         index + 1,
         floorplan.name,
     ))
 
+    for index, track in enumerate(floorplan.tracks):
+        print(" --> %d. Track: %s"%(
+            index + 1,
+            track.name
+        ))
+
 robot.get_state()
 
-# robot.start_cleaning(account.floorplans[0])
+
+# Clean just a set of rooms
+#floorplan = account.floorplans.pop()
+#tracks = list(floorplan.tracks)[2:4]
+#robot.start_cleaning(floorplan, tracks)
+
+# Clean whole floor
+#floorplan = account.floorplans.pop()
+#robot.start_cleaning(floorplan)

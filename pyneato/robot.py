@@ -11,11 +11,14 @@ from voluptuous import (
     Range,
     Required,
     Schema,
+    Coerce,
+    Equal
 )
 from enum import Enum
 
 from .neato import Neato
-from .floorplan import Floorplan
+from .enum import CleaningModeEnum, NavigationModeEnum, RobotAbilityEnum, BaseTypeEnum, RobotBagStatusEnum, RobotActionEnum, RobotStateEnum
+from .floorplan import Floorplan, Track
 from .robot_state import RobotState, RobotStateDetail, RobotStateCleaningCenter
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,7 +32,7 @@ RUN_SCHEMA = Schema(
         },
         "settings": {
             "mode": str,
-            "navigation_mode": str
+            "navigation_mode": Coerce(CleaningModeEnum)
         }
     }
 )
@@ -50,7 +53,7 @@ ABILITY_SCHEMA = Schema(
 
 STATE_SCHEMA = Schema(
     {
-        'ability': str,
+        Required('ability'): Equal(RobotAbilityEnum.STATE_SHOW),
         'action': str,
         'autonomy_states': {
             'active_cleaning_after_suspended': int,
@@ -90,35 +93,6 @@ STATE_SCHEMA = Schema(
         'state': str
     }
 )
-
-
-class CleaningModeEnum(Enum):
-    ECO = "eco"
-    MAX = "max"
-    TURBO = "turbo"
-
-    @staticmethod
-    def from_str(mode: str):
-        if mode == 'eco':
-            return CleaningModeEnum.ECO
-        elif mode == 'max':
-            return CleaningModeEnum.MAX
-        elif mode == 'turbo':
-            return CleaningModeEnum.TURBO
-        else:
-            raise NotImplementedError('CleaningMode %s'%mode)
-
-
-class NavigationModeEnum(Enum):
-    NORMAL = "normal"
-
-    @staticmethod
-    def from_str(mode: str):
-        if mode == 'normal':
-            return NavigationModeEnum.NORMAL
-        else:
-            raise NotImplementedError('NavigationMode %s'%mode)
-
 
 class Robot:
     """Data and methods for interacting with a Neato vacuum robot"""
@@ -187,25 +161,41 @@ class Robot:
         return response
 
     def start_cleaning(
-        self, floorplan: Floorplan, cleaning_mode=CleaningModeEnum.MAX, nogo_enabled=True
+        self, floorplan: Floorplan, tracks: list[Track] = None, cleaning_mode = CleaningModeEnum.MAX, nogo_enabled = True
     ):
         ability_name = "cleaning.start"
-        json = {
-            "ability": ability_name,
-            "force_floorplan": False,
-            "runs": [
-                {
+        runs = []
+
+        if tracks == None:
+            runs.append({
+                "map": {
+                    "nogo_enabled": True,
+                    "rank_id": floorplan.rank_uuid,
+                    "track_id": None
+                },
+                "settings": {
+                    "mode": cleaning_mode.value,
+                    "navigation_mode": NavigationModeEnum.NORMAL
+                }
+            })
+        else:
+            for track in tracks:
+                runs.append({
                     "map": {
                         "nogo_enabled": True,
                         "rank_id": floorplan.rank_uuid,
-                        "track_id": None
+                        "track_id": track.uuid
                     },
                     "settings": {
-                        "mode": cleaning_mode,
-                        "navigation_mode": NAVIGATION_MODE_SWITCH.get(NavigationModeEnum.NORMAL)
+                        "mode": track.cleaning_mode,
+                        "navigation_mode": NavigationModeEnum.NORMAL
                     }
-                }
-            ]
+                })
+
+        json = {
+            "ability": ability_name,
+            "force_floorplan": False,
+            "runs": runs
         }
 
         response = self._message(ability_name, json, CLEANING_SCHEMA)
@@ -220,7 +210,7 @@ class Robot:
             response: response
         }
 
-    def _base_message(self, message, schema: Schema):
+    def _base_message(self, message: str, schema: Schema):
         ability_name = message
         json = {
             "ability": message,
@@ -244,22 +234,24 @@ class Robot:
         return result.success
 
     def get_state(self) -> RobotState:
-        result = self._base_message("state.show", STATE_SCHEMA)
+        result = self._base_message(RobotAbilityEnum.STATE_SHOW, STATE_SCHEMA)
         response = result["response"]
 
         json = response.json()
 
-        _LOGGER.debug(response.json())
-        state = RobotState(json["action"], json["state"])
+        state = RobotState(
+            RobotActionEnum(json["action"]),
+            RobotStateEnum(json["state"]),
+        )
 
         state.cleaning_center = RobotStateCleaningCenter(
-            json["cleaning_center"]["bag_status"],
+            RobotBagStatusEnum(json["cleaning_center"]["bag_status"]),
             json["cleaning_center"]["base_error"],
             json["cleaning_center"]["is_extracting"],
         )
 
         state.details = RobotStateDetail(
-            json["details"]["base_type"],
+            BaseTypeEnum(json["details"]["base_type"]),
             json["details"]["charge"],
             json["details"]["is_charging"],
             json["details"]["is_docked"],
