@@ -1,8 +1,11 @@
 import logging
 import os
 import shutil
+from typing import List
 
 import requests
+
+from .exception import MyNeatoRobotException, MyNeatoUnsupportedDevice
 from .session import Session
 from .robot import Robot
 from .floorplan import Floorplan
@@ -21,6 +24,22 @@ from voluptuous import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+USERDATA_SCHEMA = Schema(
+    {
+      Required("country_code"): str,
+      Required("email"): str,
+      Required("id"): str,
+      Required("locale"): str,
+      Required("first_name"): str,
+      Required("last_name"): str,
+      "newsletter": bool,
+      "state_region": Any(str, None),
+      "vendor": str,
+      "verified_at": Any(str, None)
+    },
+    extra=ALLOW_EXTRA,
+)
 
 ROBOT_SCHEMA = Schema(
     {
@@ -51,12 +70,13 @@ FLOORPLAN_SCHEMA = Schema(
 class Account:
     def __init__(self, session: Session):
         """Initialize the account data."""
-        self._robots = set()
-        self._floorplans = set()
         self._session = session
+        self._robots = []
+        self._floorplans = []
+        self._userdata = set()
 
     @property
-    def robots(self):
+    def robots(self) -> List[Robot]:
         """
         Return set of robots for logged in account.
 
@@ -68,7 +88,7 @@ class Account:
         return self._robots
 
     @property
-    def floorplans(self):
+    def floorplans(self) -> List[Floorplan]:
         """
         Return set of floorplans for logged in account.
         """
@@ -76,6 +96,16 @@ class Account:
             self.refresh_floorplans()
 
         return self._floorplans
+
+    @property
+    def userdata(self):
+        """
+        Return the user
+        """
+        if not self._userdata:
+            self.get_userdata()
+
+        return self._userdata
 
     def refresh_robots(self):
         """
@@ -86,6 +116,7 @@ class Account:
 
         resp = self._session.get("users/me/robots")
 
+        self._robots = []
         for robot in resp.json():
             _LOGGER.debug("Create Robot: %s", robot)
             try:
@@ -100,18 +131,23 @@ class Account:
                     vendor_code=robot["vendor"],
                     vendor=self._session.vendor,
                 )
-                self._robots.add(robot_object)
+                robot_object.birth_date = robot['birth_date']
+                robot_object.firmware = robot['firmware']
+                robot_object.model_name = robot['model_name']
+                robot_object.timezone = robot['timezone']
+
+                self._robots.append(robot_object)
             except MultipleInvalid as ex:
                 # Robot was not described accordingly by neato
                 _LOGGER.warning(
                     "Bad response from robots endpoint: %s. Got: %s", ex, robot
                 )
                 continue
-            except NeatoUnsupportedDevice:
+            except MyNeatoUnsupportedDevice:
                 # Robot does not support home_cleaning service
                 _LOGGER.warning("Your robot %s is unsupported.", robot["name"])
                 continue
-            except NeatoRobotException:
+            except MyNeatoRobotException:
                 # The state of the robot could not be received
                 _LOGGER.warning("Your robot %s is offline.", robot["name"])
                 continue
@@ -127,6 +163,7 @@ class Account:
 
         resp = self._session.get("/robots/%s/floorplans"%robot.id)
 
+        self._floorplans = []
         for floorplan in resp.json():
             FLOORPLAN_SCHEMA(floorplan)
             floorplan_object = Floorplan(
@@ -135,4 +172,11 @@ class Account:
                 name = floorplan["name"],
                 rank_uuid = floorplan["rank_uuid"],
             )
-            self._floorplans.add(floorplan_object)
+            self._floorplans.append(floorplan_object)
+
+    def get_userdata(self):
+        resp = self._session.get("/users/me")
+
+        json = resp.json()
+        USERDATA_SCHEMA(json)
+        self._userdata = json

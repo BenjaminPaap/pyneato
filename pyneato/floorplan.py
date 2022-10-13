@@ -67,6 +67,9 @@ class Floorplan:
         resp = self._session.get("maps/floorplans/%s/tracks"%(self.uuid))
 
         for track in resp.json():
+            if track["name"] == None:
+                continue
+
             _LOGGER.debug("Create Floorplan Track: %s"%(track["name"]))
             try:
                 cleaning_mode = None

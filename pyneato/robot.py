@@ -17,9 +17,10 @@ from voluptuous import (
 from enum import Enum
 
 from .neato import Neato
-from .enum import CleaningModeEnum, NavigationModeEnum, RobotAbilityEnum, BaseTypeEnum, RobotBagStatusEnum, RobotActionEnum, RobotStateEnum
+from .enum import CleaningModeEnum, NavigationModeEnum, RobotAbilityEnum, RobotBaseTypeEnum, RobotBagStatusEnum, RobotActionEnum, RobotStateEnum
 from .floorplan import Floorplan, Track
 from .robot_state import RobotState, RobotStateDetail, RobotStateCleaningCenter
+from .exception import MyNeatoRobotException
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -94,6 +95,14 @@ STATE_SCHEMA = Schema(
     }
 )
 
+ROBOT_INFO_SCHEMA = Schema(
+    {
+        'ability': str,
+        'firmware': str,
+        'serial_number': str,
+    }
+)
+
 class Robot:
     """Data and methods for interacting with a Neato vacuum robot"""
 
@@ -110,12 +119,16 @@ class Robot:
     ):
         self._session = session
         self.name = name
-        self._vendor = vendor
+        self.vendor = vendor
         self._vendor_code = vendor_code
         self.serial = serial
         self.id = id
         self.user_id = user_id
         self.endpoint = endpoint
+        self.model_name = None
+        self.firmware = None
+        self.timezone = None
+        self.birth_date = None
 
         self._url = "{endpoint}/vendors/{vendor_code}/robots/{serial}/messages".format(
             endpoint=re.sub(":\d+", "", endpoint.rstrip('/')),
@@ -140,6 +153,8 @@ class Robot:
         :return: server response
         """
 
+        _LOGGER.debug(json)
+
         try:
             response = requests.post(
                 self._url + "?ability=%s"%message,
@@ -152,7 +167,10 @@ class Robot:
             requests.exceptions.ConnectionError,
             requests.exceptions.HTTPError,
         ) as ex:
-            raise NeatoRobotException("Unable to communicate with robot") from ex
+            _LOGGER.warning("Unable to communicate with robot: %s"%(
+                ex
+            ))
+            raise MyNeatoRobotException("Unable to communicate with robot") from ex
         except MultipleInvalid as ex:
             _LOGGER.warning(
                 "Invalid response from %s: %s. Got: %s", self._url, ex, response.json()
@@ -175,7 +193,7 @@ class Robot:
                 },
                 "settings": {
                     "mode": cleaning_mode.value,
-                    "navigation_mode": NavigationModeEnum.NORMAL
+                    "navigation_mode": NavigationModeEnum.NORMAL.value
                 }
             })
         else:
@@ -187,8 +205,8 @@ class Robot:
                         "track_id": track.uuid
                     },
                     "settings": {
-                        "mode": track.cleaning_mode,
-                        "navigation_mode": NavigationModeEnum.NORMAL
+                        "mode": track.cleaning_mode.value if track.cleaning_mode != None else None,
+                        "navigation_mode": NavigationModeEnum.NORMAL.value
                     }
                 })
 
@@ -202,7 +220,7 @@ class Robot:
         result = response.json().get("ability", None)
         if result != ability_name:
             _LOGGER.warning(
-                "Result of robot.%s is not ok: %s, alert: %s", ability_name, result, alert
+                "Result of robot.%s is not ok: %s", ability_name, result
             )
 
         return {
@@ -220,7 +238,7 @@ class Robot:
         result = response.json().get("ability", None)
         if result != message:
             _LOGGER.warning(
-                "Result of robot.%s is not ok: %s, alert: %s", message, result, alert
+                "Result of robot.%s is not ok: %s, alert: %s", message, result
             )
 
         return {
@@ -234,7 +252,7 @@ class Robot:
         return result.success
 
     def get_state(self) -> RobotState:
-        result = self._base_message(RobotAbilityEnum.STATE_SHOW, STATE_SCHEMA)
+        result = self._base_message(RobotAbilityEnum.STATE_SHOW.value, STATE_SCHEMA)
         response = result["response"]
 
         json = response.json()
@@ -251,7 +269,7 @@ class Robot:
         )
 
         state.details = RobotStateDetail(
-            BaseTypeEnum(json["details"]["base_type"]),
+            RobotBaseTypeEnum(json["details"]["base_type"]),
             json["details"]["charge"],
             json["details"]["is_charging"],
             json["details"]["is_docked"],
@@ -266,9 +284,12 @@ class Robot:
         return state
 
     def info_robot(self):
-        resp = self._base_message("info.robot", ROBOT_INFO_SCHEMA)
+        result = self._base_message("info.robot", ROBOT_INFO_SCHEMA)
+        response = result["response"]
 
-        _LOGGER.debug(resp["response"].json())
+        _LOGGER.debug(response.json())
+
+        return response.json()
 
     def resume_cleaning(self) -> bool:
         result = self._base_message("cleaning.resume", ABILITY_SCHEMA)
@@ -283,3 +304,7 @@ class Robot:
 
     def return_to_base(self):
         return self._base_message("navigation.return_to_base", ABILITY_SCHEMA)
+
+    @property
+    def state(self):
+        return self.get_state()

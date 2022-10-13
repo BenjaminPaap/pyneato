@@ -12,3 +12,8 @@ class MyNeatoException(Exception):
     def __init__(self, message):
         Exception.__init__(self)
         self.message = message
+
+class MyNeatoUnsupportedDevice(Exception):
+    def __init__(self, message):
+        Exception.__init__(self)
+        self.message = message
