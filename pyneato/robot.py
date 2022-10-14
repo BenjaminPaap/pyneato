@@ -249,7 +249,7 @@ class Robot:
     def pause_cleaning(self) -> bool:
         result = self._base_message("cleaning.pause", ABILITY_SCHEMA)
 
-        return result.success
+        return result["success"]
 
     def get_state(self) -> RobotState:
         result = self._base_message(RobotAbilityEnum.STATE_SHOW.value, STATE_SCHEMA)
@@ -294,16 +294,18 @@ class Robot:
     def resume_cleaning(self) -> bool:
         result = self._base_message("cleaning.resume", ABILITY_SCHEMA)
 
-        return result.success
+        return result["success"]
 
     def cancel_cleaning(self) -> bool:
         pause_result = self.pause_cleaning()
         return_to_base_result = self.return_to_base()
 
-        return pause_result.success and return_to_base_result.success
+        return pause_result and return_to_base_result
 
-    def return_to_base(self):
-        return self._base_message("navigation.return_to_base", ABILITY_SCHEMA)
+    def return_to_base(self) -> bool:
+        result = self._base_message("navigation.return_to_base", ABILITY_SCHEMA)
+
+        return result["success"]
 
     @property
     def state(self):

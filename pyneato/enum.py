@@ -7,6 +7,7 @@ class RobotAbilityEnum(str, Enum):
 class RobotStateEnum(Enum):
     BUSY = 'busy'
     IDLE = 'idle'
+    PAUSED = 'paused'
 
     @staticmethod
     def from_str(state: str):
@@ -14,6 +15,8 @@ class RobotStateEnum(Enum):
             return RobotStateEnum.BUSY
         elif state == 'idle':
             return RobotStateEnum.IDLE
+        elif state == 'paused':
+            return RobotStateEnum.PAUSED
         else:
             raise NotImplementedError('RobotState %s'%state)
 
