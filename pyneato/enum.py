@@ -2,7 +2,11 @@ from enum import Enum
 
 class RobotAbilityEnum(str, Enum):
     STATE_SHOW = "state.show"
-
+    INFO = "info.robot"
+    FIND_ME = "utilities.find_me"
+    CLEANING_PAUSE = "cleaning.pause"
+    CLEANING_RESUME = "cleaning.resume"
+    RETURN_TO_BASE = "navigation.return_to_base"
 
 class RobotStateEnum(Enum):
     BUSY = 'busy'

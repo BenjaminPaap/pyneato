@@ -247,7 +247,7 @@ class Robot:
         }
 
     def pause_cleaning(self) -> bool:
-        result = self._base_message("cleaning.pause", ABILITY_SCHEMA)
+        result = self._base_message(RobotAbilityEnum.CLEANING_PAUSE.value, ABILITY_SCHEMA)
 
         return result["success"]
 
@@ -284,7 +284,7 @@ class Robot:
         return state
 
     def info_robot(self):
-        result = self._base_message("info.robot", ROBOT_INFO_SCHEMA)
+        result = self._base_message(RobotAbilityEnum.INFO.value, ROBOT_INFO_SCHEMA)
         response = result["response"]
 
         _LOGGER.debug(response.json())
@@ -292,7 +292,7 @@ class Robot:
         return response.json()
 
     def resume_cleaning(self) -> bool:
-        result = self._base_message("cleaning.resume", ABILITY_SCHEMA)
+        result = self._base_message(RobotAbilityEnum.CLEANING_RESUME.value, ABILITY_SCHEMA)
 
         return result["success"]
 
@@ -303,7 +303,12 @@ class Robot:
         return pause_result and return_to_base_result
 
     def return_to_base(self) -> bool:
-        result = self._base_message("navigation.return_to_base", ABILITY_SCHEMA)
+        result = self._base_message(RobotAbilityEnum.RETURN_TO_BASE.value, ABILITY_SCHEMA)
+
+        return result["success"]
+
+    def find_me(self) -> bool:
+        result = self._base_message(RobotAbilityEnum.FIND_ME.value, ABILITY_SCHEMA)
 
         return result["success"]
 
