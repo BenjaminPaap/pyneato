@@ -68,8 +68,6 @@ class OrbitalPasswordSession(Session):
                 headers=self.headers,
             )
 
-            _LOGGER.warning("Status Code: %d"%(response.status_code))
-
             response.raise_for_status()
 
             self.access_token = response.json()["token"]

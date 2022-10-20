@@ -37,7 +37,7 @@ TRACK_SCHEMA = Schema(
 )
 
 class Floorplan:
-    def __init__(self, session: Session, uuid: str, name: str, rank_uuid: str):
+    def __init__(self, session: Session, uuid: str, name: str | None, rank_uuid: str):
         self._session = session
         self.name = name
         self.uuid = uuid
@@ -70,7 +70,6 @@ class Floorplan:
             if track["name"] == None:
                 continue
 
-            _LOGGER.debug("Create Floorplan Track: %s"%(track["name"]))
             try:
                 cleaning_mode = None
                 if None != track["cleaning_mode"]:

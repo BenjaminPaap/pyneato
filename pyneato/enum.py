@@ -115,3 +115,6 @@ class NavigationModeEnum(str, Enum):
             return NavigationModeEnum.NORMAL
         else:
             raise NotImplementedError('NavigationMode %s'%mode)
+
+class RobotErrorEnum(str, Enum):
+    DUSTBIN_MISSING = 'dustbin_missing'

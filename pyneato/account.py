@@ -61,7 +61,7 @@ FLOORPLAN_SCHEMA = Schema(
     {
         Required("floorplan_uuid"): str,
         Required("rank_uuid"): str,
-        Required("name"): str,
+        Required("name"): Any(str, None),
         "map_versions_count": int,
     },
     extra=ALLOW_EXTRA,

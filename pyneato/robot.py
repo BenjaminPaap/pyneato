@@ -152,9 +152,6 @@ class Robot:
         :param json: dict containing data to send
         :return: server response
         """
-
-        _LOGGER.debug(json)
-
         try:
             response = requests.post(
                 self._url + "?ability=%s"%message,
@@ -179,7 +176,11 @@ class Robot:
         return response
 
     def start_cleaning(
-        self, floorplan: Floorplan, tracks: list[Track] = None, cleaning_mode = CleaningModeEnum.MAX, nogo_enabled = True
+        self,
+        floorplan: Floorplan,
+        tracks: list[Track] = None,
+        cleaning_mode = CleaningModeEnum.ECO,
+        nogo_enabled = True
     ):
         ability_name = "cleaning.start"
         runs = []
@@ -286,8 +287,6 @@ class Robot:
     def info_robot(self):
         result = self._base_message(RobotAbilityEnum.INFO.value, ROBOT_INFO_SCHEMA)
         response = result["response"]
-
-        _LOGGER.debug(response.json())
 
         return response.json()
 
