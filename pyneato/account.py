@@ -73,6 +73,7 @@ class Account:
         self._session = session
         self._robots = []
         self._floorplans = []
+        self._floorplans_initialized = False
         self._userdata = set()
 
     @property
@@ -92,7 +93,7 @@ class Account:
         """
         Return set of floorplans for logged in account.
         """
-        if not self._floorplans:
+        if not self._floorplans and not self._floorplans_initialized:
             self.refresh_floorplans()
 
         return self._floorplans
@@ -157,6 +158,8 @@ class Account:
 
         for robot in self.robots:
             self.get_floorplan(robot)
+
+        self._floorplans_initialized = True
 
     def get_floorplan(self, robot: Robot):
         _LOGGER.debug("Getting floorplan for %s", robot.name)
