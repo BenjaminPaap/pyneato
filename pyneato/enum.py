@@ -93,6 +93,7 @@ class CleaningModeEnum(str, Enum):
     ECO = "eco"
     MAX = "max"
     TURBO = "turbo"
+    AUTO = "auto"
 
     @staticmethod
     def from_str(mode: str):
@@ -102,6 +103,8 @@ class CleaningModeEnum(str, Enum):
             return CleaningModeEnum.MAX
         elif mode == 'turbo':
             return CleaningModeEnum.TURBO
+        elif mode == 'auto':
+            return CleaningModeEnum.AUTO
         else:
             raise NotImplementedError('CleaningMode %s'%mode)
 
