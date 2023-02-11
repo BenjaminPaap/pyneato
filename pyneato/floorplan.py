@@ -1,4 +1,8 @@
+import base64
 import logging
+import io
+
+import PIL.Image as Image
 
 from .session import Session
 from .enum import TrackTypeEnum, CleaningModeEnum
@@ -37,12 +41,35 @@ TRACK_SCHEMA = Schema(
 )
 
 class Floorplan:
-    def __init__(self, session: Session, uuid: str, name: str | None, rank_uuid: str):
+    def __init__(
+        self,
+        session: Session,
+        uuid: str,
+        name: str | None,
+        rank_uuid: str,
+        rank_binary,
+    ):
         self._session = session
         self.name = name
         self.uuid = uuid
         self.rank_uuid = rank_uuid
         self._tracks = set()
+
+        self._rank_binary = rank_binary
+
+    @property
+    def rank_image(self) -> Image:
+        """
+        Get the image of the floorplan
+
+        :return: The image of the floorplan
+        """
+        img_str = base64.b64decode(self._rank_binary)
+        pil_image = Image.open(io.BytesIO(bytearray(img_str)))
+        image_grey = pil_image.split()[0]
+        color_conversion = {0: 228, 1: 169, 2: 255}
+        image_color = image_grey.point(lambda p: color_conversion[p])
+        return image_color.convert("RGB")
 
     @property
     def tracks(self):

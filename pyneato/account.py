@@ -174,6 +174,7 @@ class Account:
                 uuid = floorplan["floorplan_uuid"],
                 name = floorplan["name"],
                 rank_uuid = floorplan["rank_uuid"],
+                rank_binary = floorplan["processed_rank_binary"],
             )
             self._floorplans.append(floorplan_object)
 

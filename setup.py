@@ -16,5 +16,5 @@ setup(
     packages=["pyneato"],
     package_dir={"pyneato": "pyneato"},
     package_data={"pyneato": ["cert/*.crt"]},
-    install_requires=["requests", "requests_oauthlib", "voluptuous"],
+    install_requires=["requests", "requests_oauthlib", "voluptuous", "pillow"],
 )
