@@ -1,8 +1,5 @@
 import base64
 import logging
-import io
-
-import PIL.Image as Image
 
 from .session import Session
 from .enum import TrackTypeEnum, CleaningModeEnum
@@ -47,29 +44,25 @@ class Floorplan:
         uuid: str,
         name: str | None,
         rank_uuid: str,
-        rank_binary,
+        rank_binary: str,
+        last_modified_at: str,
     ):
         self._session = session
         self.name = name
         self.uuid = uuid
         self.rank_uuid = rank_uuid
         self._tracks = set()
-
+        self.last_modified_at = last_modified_at
         self._rank_binary = rank_binary
 
     @property
-    def rank_image(self) -> Image:
+    def rank_image(self) -> str:
         """
-        Get the image of the floorplan
+        Get the binary image of the floorplan
 
         :return: The image of the floorplan
         """
-        img_str = base64.b64decode(self._rank_binary)
-        pil_image = Image.open(io.BytesIO(bytearray(img_str)))
-        image_grey = pil_image.split()[0]
-        color_conversion = {0: 228, 1: 169, 2: 255}
-        image_color = image_grey.point(lambda p: color_conversion[p])
-        return image_color.convert("RGB")
+        return base64.b64decode(self._rank_binary)
 
     @property
     def tracks(self):

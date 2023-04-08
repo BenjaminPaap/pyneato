@@ -175,6 +175,7 @@ class Account:
                 name = floorplan["name"],
                 rank_uuid = floorplan["rank_uuid"],
                 rank_binary = floorplan["processed_rank_binary"],
+                last_modified_at = floorplan["last_modified_at"],
             )
             self._floorplans.append(floorplan_object)
 
