@@ -1,3 +1,4 @@
+import base64
 import logging
 
 from .session import Session
@@ -37,12 +38,31 @@ TRACK_SCHEMA = Schema(
 )
 
 class Floorplan:
-    def __init__(self, session: Session, uuid: str, name: str | None, rank_uuid: str):
+    def __init__(
+        self,
+        session: Session,
+        uuid: str,
+        name: str | None,
+        rank_uuid: str,
+        rank_binary: str,
+        last_modified_at: str,
+    ):
         self._session = session
         self.name = name
         self.uuid = uuid
         self.rank_uuid = rank_uuid
         self._tracks = set()
+        self.last_modified_at = last_modified_at
+        self._rank_binary = rank_binary
+
+    @property
+    def rank_image(self) -> str:
+        """
+        Get the binary image of the floorplan
+
+        :return: The image of the floorplan
+        """
+        return base64.b64decode(self._rank_binary)
 
     @property
     def tracks(self):
